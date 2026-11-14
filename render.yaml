@@ -1,0 +1,19 @@
+# Creates a paid Render cron job only after account connection and approval.
+# Billing: at least USD 1 per month per cron job; actual runtime may cost more.
+services:
+  - type: cron
+    name: ithaca-bus-eink
+    runtime: node
+    region: virginia
+    plan: 0.5c-512mb
+    schedule: "3,13,23,33,43,53 * * * *"
+    buildCommand: node --test test/*.test.mjs
+    startCommand: node Cloud_Update.mjs
+    autoDeployTrigger: off
+    envVars:
+      - key: NODE_VERSION
+        value: 24.21.0
+      - key: ZECTRIX_API_KEY
+        sync: false
+      - key: ZECTRIX_DEVICE_ID
+        sync: false

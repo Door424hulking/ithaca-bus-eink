@@ -1,0 +1,10 @@
+{
+  "destinationStops": ["Carpenter Hall", "Sage Hall"],
+  "lookAheadHours": 24,
+  "maxRideMinutes": 40,
+  "maxRows": 3,
+  "maxRealtimeAgeSeconds": 180,
+  "pollSeconds": 60,
+  "pushEverySeconds": 600,
+  "pageId": "2"
+}
