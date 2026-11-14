@@ -1,63 +1,79 @@
-# Ithaca 公交墨水屏：云端定时运行版
+# Ithaca 公交墨水屏：云端运行版
 
-版本 0.2.0；准备日期 2026-11-13（伊萨卡）。
+版本 0.2.0；上线日期 2026-11-13（伊萨卡时间）。
 
 ## 当前状态
 
-代码和 Render 部署配置已准备好，尚未创建云端服务，也尚未开通收费项目。
-需要连接用户自己的 Render 账户，并确认费用后才能部署。现有电脑定时任务暂时保留；云端实际推送验证成功后才停用。
+已部署到用户自己的 Render 账户。云端任务已启用，电脑关机不影响查询与上传。
 
-## 部署后怎样工作
+- 私有源码：https://github.com/Door424hulking/ithaca-bus-eink
+- 运行记录：https://dashboard.render.com/cron/crn-dbrro63l550s73elgrqg/runs
+- 日志：https://dashboard.render.com/cron/crn-dbrro63l550s73elgrqg/logs
+- 设置：https://dashboard.render.com/cron/crn-dbrro63l550s73elgrqg/settings
+- 服务 ID：crn-dbrro63l550s73elgrqg
+- 首次部署的程序提交：be73f4a97137fa5ddb38eea66166f2ebd135b561
 
-Render 每小时第 3、13、23、33、43、53 分钟启动一次程序。每次重新获取 TCAT 数据，固定查询 Ithaca Commons 到 Carpenter Hall / Sage Hall 的直达班次，显示最近三班车，再由该站步行到 Rhodes Hall。
+验证记录（2026-11-13 EST）：
 
-程序生成 400×300 黑白图片并上传极趣云第 2 页；极趣云保存图片，墨水屏通过 Wi-Fi 按自身同步周期取回。电脑关机不会停止已部署的 Render 任务。不要把云端上传间隔等同于屏幕准确刷新间隔，实体屏幕自动同步仍须验证。
+1. 20:40:58，Render 服务器运行测试：21 项通过、0 项失败。
+2. 20:41:31，手动触发的云端任务成功上传极趣云第 2 页，程序退出码为 0；20:41:34 平台记录运行成功。
+3. 随后停用 Windows 的 IthacaBusEink 任务，确认 Enabled=false、State=Disabled，且没有遗留的本项目 Node 更新进程。
+4. 20:43，Render 按计划自动触发，20:43:16 成功上传新画面并以 0 退出，20:43:20 平台记录运行成功。这一轮没有手动触发。
 
-## 待部署配置
+## 日常使用
 
-- 服务：单个 Render Cron Job，不创建常驻 Web 服务、数据库或磁盘。
-- 运行环境：Node.js 24.21.0，Virginia，0.5 CPU / 512 MB。
-- 执行命令：`node Cloud_Update.mjs`，每次执行完即退出。
-- 失败或超时会返回非零退出码，云平台可据此记录失败。
-- 运行超过 90 秒即终止，必要时在 3 秒后强制结束子进程。
-- 密钥只通过 Render 环境变量注入；不要提交 `.env`。
-- Git 源码仓库应保持私有；关闭自动部署，更新经验证后手动发布。
+墨水屏保持供电并连接 Wi-Fi 即可，不需要连接电脑传输数据。若目前通过电脑 USB 供电，关机后请确保它仍有电，例如改用独立 USB 电源或设备电池。
 
-Render 按运行时间计费，每个 Cron Job 每月至少 USD 1；这不是免费服务，也不是承诺固定 USD 1。准确费用以 Render 账户账单和当时费率为准。
+Render 每小时第 3、13、23、33、43、53 分钟启动一次程序。每次重新获取 TCAT 数据，固定查询 Ithaca Commons 到 Carpenter Hall / Sage Hall 的直达班次，显示最近三班，再由下车站步行到 Rhodes Hall。
 
+程序生成 400×300 黑白图片并上传极趣云第 2 页；极趣云保存图片，墨水屏通过 Wi-Fi 按自身同步周期取回。云端上传成功不等于实体屏幕此刻已刷新；本次已验证云端定时运行和上传，未重新目视验证实体屏幕的自动刷新。
+
+屏幕上的剩余分钟数以 AS OF 时间为准，不是持续倒计时。请同时看绝对发车时间。LIVE 表示新鲜的实时预测；SCHED 表示时刻表。
+
+不要再次启动原电脑的 Start_Background_Windows.cmd，否则会恢复第二套上传任务。
+
+## 实际部署配置
+
+| 配置 | 值 |
+| --- | --- |
+| 服务类型 | 单个 Render Cron Job |
+| 运行环境 | Node.js 24.21.0 |
+| 区域 | Virginia |
+| 计算规格 | 0.5 CPU / 512 MB |
+| 构建命令 | `node --test test/*.test.mjs` |
+| 执行命令 | `node Cloud_Update.mjs` |
+| 时间表 | `3,13,23,33,43,53 * * * *` |
+| 自动部署代码变更 | Off |
+| 显示目标页 | 2 |
+
+密钥和设备 ID 已作为 Render 环境变量保存，不在仓库中。不要提交 .env、缓存或运行日志。
+
+任务执行完即退出，超过 90 秒会终止子进程，必要时在 3 秒后强制结束。失败或超时返回非零退出码，方便平台记录失败。无需数据库、常驻 Web 服务或持久磁盘。
+
+Render 参考费率为 USD 0.00016/运行分钟，每个 Cron Job 每月至少 USD 1；以实际账单为准，并非固定收费或已设置硬性费用封顶。
 官方说明：https://render.com/docs/cronjobs
-官方部署规范：https://render.com/docs/blueprint-spec
 
-## 账户准备好后的部署步骤
+## 维护与故障检查
 
-1. 把本目录的源代码放入用户自己的私有 Git 仓库，关联 Render。
-2. 使用根目录 `render.yaml` 创建单个 Cron Job，核对计划、费用和每 10 分钟的时间表。
-3. 在 Render 的环境变量中设置 `ZECTRIX_API_KEY` 和 `ZECTRIX_DEVICE_ID`；设备 ID 应填 MAC，不是型号名称。
-4. 首次构建运行全部测试；随后手动触发一次云端任务。
-5. 在云端日志核对：新查询时间、目标页 2、上传成功和退出码 0。
-6. 用实体屏幕核对新画面；再核对一轮由云平台自动触发的任务。
-7. 云端接管成功后，在原电脑执行 `node Schedule_Windows.mjs stop` 停用原任务，避免两处同时上传。
+1. 在 Runs 查看最近一次运行；成功项应显示 Scheduled 或 Manual，以及成功状态。
+2. 在 Logs 查看最近的 AS OF、Uploaded to page 2 和 exit=0。
+3. 若云端上传成功但屏幕未变化，检查墨水屏供电、Wi-Fi、当前页及同步周期，并尝试设备的同步操作。
+4. 修改代码后先运行测试，再在 Render 手动部署；当前关闭了自动部署。
+5. 如需暂停云端更新，在 Settings 使用 Suspend Cron Job。暂停不会删除源码或设备已有画面。
 
-本包不包含用户密钥、设备 MAC、缓存和历史运行日志。
-
-## 本地检查（不等于已经部署）
+## 本地开发
 
 ```sh
 node --test test/*.test.mjs
 node Cloud_Update.mjs --dry-run
 ```
 
-`--dry-run` 从真实 TCAT 数据生成 `output/board.png` 和 `output/board.json`，不上传极趣云。正常执行 `node Cloud_Update.mjs` 则会上传，需要环境变量。
-
-21 项测试已通过。已从无密钥、无缓存的干净目录实际读取 TCAT 并生成图片，耗时约 1.3 秒；这是本机测量，不代表云端性能。也已验证缺少密钥时会报错退出，不会伪报成功。随后仅通过进程环境变量提供密钥，本机运行同一云端入口成功向极趣云第 2 页上传 20:16 的新画面。这个测试仍发生在本机，不能当作云端已经部署。
+`--dry-run` 从真实 TCAT 数据生成 output/board.png 和 output/board.json，不上传极趣云。正常执行 `node Cloud_Update.mjs` 会上传，需要提供 ZECTRIX_API_KEY 和 ZECTRIX_DEVICE_ID 环境变量。设备 ID 使用 MAC，不使用型号名称。
 
 ## 边界
 
-- 本版按发车先后列出直达车，不计算换乘或总步行时间。
-- LIVE 是新鲜的实时预测，SCHED 是时刻表；超过 3 分钟的实时数据降级处理。
-- 屏幕分钟数以 AS OF 时间为准，并非逐秒倒计时，同时保留绝对发车时间。
-- 数据失败或时刻表过期时明确显示错误，不把旧数据伪装为当前数据。
-- 云端不依赖持久磁盘；每次全新启动均可重新获取时刻表。运行内缓存只用于降低重复读取。
-- 未测试 Docker 容器构建；默认 Render 原生 Node 部署路径不依赖 Docker。
-
-`Dockerfile` 是迁移至其他支持定时容器运行的平台时的备用入口。
+- 按发车先后列出直达班次，不计算换乘或总步行时间。
+- 超过 3 分钟的实时数据降级为时刻表，排除取消班次和不合适的上下车站。
+- 时刻表过期或数据失败时明确显示问题，不把旧数据当成当前预测。
+- 每次全新启动均可重新获取时刻表；进程内缓存只用于降低重复读取。
+- Dockerfile 是迁移备用入口，未验证 Docker 构建。当前已验证并使用 Render 原生 Node 环境。
